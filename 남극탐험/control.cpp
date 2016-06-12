@@ -31,9 +31,16 @@ int getKey() {
 	if (_kbhit() != 0) //키보드를 눌렀는지 확인함 
 	{
 		keyValue = _getch();
-
+		if (keyValue == 224) //특수 키를 눌렀을 때 버퍼에 2Byte가 발생함, 첫번째 값(2바이트중 첫1바이트)은 224값을 발생하고 두번째 값(두번째 바이트)은 특수키에 따라 다름.
+		{
+			keyValue = _getch(); //특수 키를 확인하기 위해 2번의 _getch()함수를 호출해야 함
+		}
+		
 		switch (keyValue)
 		{
+		case ENTER:
+			act = SELECT;
+			break;
 		case ESC:
 			act = GAME_QUIT;
 			break;

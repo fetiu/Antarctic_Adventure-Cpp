@@ -8,12 +8,13 @@
 #include"control.h"//콘솔 출력 제어하는 헤더도 모두 여기에 포함됨.
 #include"Game.h"
 #include"Character.h"
+#include <stdlib.h>
+#include <time.h>
 //#include"Sound.h"
-
-
 
 int main() {
 
+	srand((unsigned int)time(NULL));
 	Game game;
 		
 	game.startMenu();
@@ -24,6 +25,7 @@ int main() {
 	while (game.action != GAME_QUIT) {
 
 		game.setNextStage();
+
 		game.mapMenu();
 
 		game.playStage();

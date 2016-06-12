@@ -1,18 +1,21 @@
 #pragma once
+
+
 #ifndef __CHARACTER_H__
 #define __CHARACTER_H__
+
 #include"Element.h"
 #include"Output.h"
-
-class Game;
 
 class Character :public Element
 {
 public:
-	Character(int _X, int _Y) :Element(_X, _Y) {}
+	Character();
+	Character(int _X, int _Y) :Element(_X, _Y) {}//스테이지에서 불러와지는 캐릭터
 	//int x, y;
 	void movePos();
-	void motionPrint(Output* graphic);
+	void motionPrint(Output* graphic,int &speed);
+	bool getCollide() { return state_stumble; }
 private:
 	const static int form[5][9][11];
 	//presentForm = form[shape];

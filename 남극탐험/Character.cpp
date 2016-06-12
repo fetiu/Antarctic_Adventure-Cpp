@@ -8,7 +8,7 @@ const int Character::form[5][9][11] =
 		{ 0,0,0,1,3,1,1,1,0,0,0 },
 		{ 0,1,1,1,1,1,1,1,0,0,0 },
 		{ 0,0,0,1,1,1,1,1,1,0,0 },
-		{ 0,0,0,2,2,2,2,2,0,1,0 },
+		{ 0,0,0,1,1,1,1,1,0,1,0 },
 		{ 0,0,0,2,2,2,2,2,0,0,0 },
 		{ 0,0,0,2,2,2,2,2,3,0,0 },
 		{ 0,0,2,2,3,0,0,0,0,0,0 }
@@ -19,7 +19,7 @@ const int Character::form[5][9][11] =
 		{ 0,0,0,1,3,1,1,1,0,0,0 },
 		{ 0,0,0,1,1,1,1,1,0,0,0 },
 		{ 0,1,1,1,1,1,1,1,1,1,0 },
-		{ 0,0,0,2,2,2,2,2,0,0,0 },
+		{ 0,0,0,1,1,1,1,1,0,0,0 },
 		{ 0,0,0,2,2,2,2,2,0,0,0 },
 		{ 0,0,0,2,2,2,2,2,0,0,0 },
 		{ 0,0,2,2,0,0,0,2,2,0,0 }
@@ -30,7 +30,7 @@ const int Character::form[5][9][11] =
 		{ 0,0,0,1,3,1,1,1,0,0,0 },
 		{ 0,0,0,1,1,1,1,1,1,1,0 },
 		{ 0,0,1,1,1,1,1,1,0,0,0 },
-		{ 0,1,0,2,2,2,2,2,0,0,0 },
+		{ 0,1,0,1,1,1,1,1,0,0,0 },
 		{ 0,0,0,2,2,2,2,2,0,0,0 },
 		{ 0,0,3,2,2,2,2,2,0,0,0 },
 		{ 0,0,0,0,0,0,3,2,2,0,0 }
@@ -44,7 +44,7 @@ const int Character::form[5][9][11] =
 		{ 0,1,1,1,1,1,1,1,1,1,0 },
 		{ 0,0,0,1,1,1,1,1,0,0,0 },
 		{ 0,0,0,1,1,1,1,1,0,0,0 },
-		{ 0,0,1,1,0,0,0,1,1,0,0 }
+		{ 0,0,2,2,0,0,0,2,2,0,0 }
 	},
 	{//jump
 		{ 0,0,0,0,1,1,1,0,0,0,0 },//헬리콥터 달면 이모양 유지.
@@ -60,10 +60,12 @@ const int Character::form[5][9][11] =
 };
 
 
-void Character::motionPrint(Output* graphic){
+void Character::motionPrint(Output* graphic,int& speed){
 
-	if (collision(this, graphic->board) || state_stumble) //지금 충돌이거나, 충돌 동작 상태일때. 제일 우선.
+	if (collision(this, graphic->getBoard()) || state_stumble) { //지금 충돌이거나, 충돌 동작 상태일때. 제일 우선.
 		stumbleMotion();	//충돌 동작 animation?
+		speed=26;
+	}
 	else if (state_jump)
 		jumpMotion();	//점프 동작
 	else if (state_crouch)
@@ -72,8 +74,10 @@ void Character::motionPrint(Output* graphic){
 		idleMotion();	//평상시 캐릭터 동작. 제일 마지막에 안하며 이전 상태를 우선적으로 수행할 수 없을지도.
 
 	memcpy(presentForm, form[shape], sizeof(int) * 9 * 11);//결정된 동작을 현재 형태에 복사
-	graphic->fixOnBoard(this);	//출력 보드에 현재 객체 입력
+	graphic->fixOnBoard(this);	//출력 보드에 현재 객체 배치. 좌표와 형태 모두 필요.
 }
+
+
 
 void Character::idleMotion() {
 	static int shapeCnt = 0;
@@ -83,6 +87,8 @@ void Character::idleMotion() {
 	else	//2,3
 		shape--;
 
+	// 위와 동일 ((shapeCnt % 4) < 2) ? shape++ : shape--;
+
 	tmp_shape = shape;	//끝났을때의 상태를 임시로 저장해둠.
 						//다른 동작이 끝나고 왔을때 이 상태로 다시옴.
 	shapeCnt++; //0,1,2,3,4,5,6,7,8....	
@@ -90,26 +96,28 @@ void Character::idleMotion() {
 }
 
 
+
 void Character::stumbleMotion() {
 	static int stumbleCnt = 0;
 
 	if (stumbleCnt == 0) {
 		state_stumble = true;
-		shape = (x > 14) ? 0 : 2; //오른쪽에 있는경우 모양에 0대입.
+		shape = (action==MOVE_RIGHT) ? 0 : 2; //이전에 오른쪽으로 이동 중이였다면 모양에 0(왼쪽)대입.
 	}
-	else if (stumbleCnt == 9) {
-		state_stumble = false;
-		shape = tmp_shape;	//형태를 이전 동작으로 복구시킴
-		stumbleCnt = 0;	
-		return;		// 초기화 이후에 cnt가 다시 일어나지 않도록 중단 시켜야함.
+	else {
+		tmp_act = (shape == 0) ? MOVE_LEFT : MOVE_RIGHT;
+		//벽과 충돌하는 경우를 배제하기 위해 직접적으로 좌표를 바꿔주지 않았다.
+		//좌표로 판단할 시 중앙에서 좌우로 왔다갔다하는 버그가 생김.
+		if (stumbleCnt == 7) {
+			state_stumble = false;
+			shape = tmp_shape;	//형태를 이전 동작으로 복구시킴
+			stumbleCnt = 0;
+			return;		// 초기화 이후에 cnt가 다시 일어나지 않도록 중단 시켜야함.
+		}
+		else
+			(stumbleCnt % 2) ? y-- : y++;	//홀수 일때는 위로, 짝수일땐 아래로.
 	}
-	else 
-		(stumbleCnt % 2) ? y-- : y++;	//홀수 일때는 위로, 짝수일땐 아래로.
-
-	tmp_act = (shape == 0 ) ? MOVE_LEFT : MOVE_RIGHT; 
-	//벽과 충돌하는 경우를 배제하기 위해 직접적으로 좌표를 바꿔주지 않았다.
-	//좌표로 판단할 시 중앙에서 좌우로 왔다갔다하는 버그가 생김.
-
+	
 	stumbleCnt++;
 }
 
@@ -119,15 +127,19 @@ void Character::jumpMotion() {	//점프 동작과 높이를 정해주는 함수.
 	if (jumpCnt == 0) {	//점프를 시작할때 형태를 3으로.
 		shape = 3;
 	}
-	else if (jumpCnt == 7) {
+	else if (jumpCnt == 9) {//7
+		//y++;
 		state_jump = false;
 		shape = tmp_shape;	//형태를 이전에 하던 동작으로 복구시킴
 		jumpCnt = 0;
 		return;
 	}
 	else {
-		(jumpCnt < 4) ? y-- : y++;
-		shape = (jumpCnt < 6) ? 4 : 3;	//마지막 카운트되기전까진 형태에 4대입.
+		(jumpCnt < 5) ? y-- : y++;	//4
+		if (jumpCnt == 4) y++;
+		if (jumpCnt == 5) y--;
+		//if (jumpCnt == 6) y--;
+		shape = (jumpCnt < 8) ? 4 : 3;	//마지막 카운트되기전까진 형태에 4대입.
 	}
 
 	jumpCnt++;
@@ -161,12 +173,14 @@ void Character::movePos() {
 		break;
 	case IDLE:
 		break;
+	case CROUCH:
+		state_crouch = true;
+		break;
 	case JUMP:
 		state_jump = true;	//점프가 눌리면 점프상태로 전환.
 		//중도에 좌우 키가 눌려도 인식 할 수 있다.
 		//action이 하나이기에 case외부에 하는건 의미가 없다.
-	case CROUCH:
-		state_crouch = true;
+		break;
 	case STAGE_CLEAR:
 		/*차차 와이좌표 감소하며 기지에 가까이.*/
 	case GAME_QUIT:

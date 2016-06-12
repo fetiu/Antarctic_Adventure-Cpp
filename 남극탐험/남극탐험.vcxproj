@@ -147,11 +147,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="control.cpp" />
-    <ClCompile Include="flag.cpp" />
+    <ClCompile Include="Flag.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Ground.cpp" />
-    <ClCompile Include="hole.cpp" />
+    <ClCompile Include="Hole.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Map.cpp" />
     <ClCompile Include="Output.cpp" />
     <ClCompile Include="Character.cpp" />
   </ItemGroup>
